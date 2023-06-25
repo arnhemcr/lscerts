@@ -1,0 +1,25 @@
+#
+# test URLs for lscerts
+#
+# happy
+https://sha256.badssl.com/
+https://test-dv-ecc.ssl.com
+
+# unhappy
+# 
+# certificates not valid
+https://expired.badssl.com
+https://revoked.badssl.com
+#
+# certificates not trusted
+https://self-signed.badssl.com
+#
+# no such host
+https://nosuchhost.example.com
+#
+# port not valid
+https://bad-port.org:77b
+#
+# URL not HTTPS
+http://example.com
+index.html

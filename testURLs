@@ -2,7 +2,10 @@
 # test URLs for lscerts
 #
 # happy
+https://test-ev-rsa.ssl.com
+https://test-ev-ecc.ssl.com
 https://sha256.badssl.com/
+https://test-dv-rsa.ssl.com
 https://test-dv-ecc.ssl.com
 
 # unhappy

@@ -12,14 +12,15 @@
 // If not, see <https://www.gnu.org/licenses/>.
 
 // Lscerts lists certificates for URLs.
-// For each HTTPS URL read from standard input, one URL per line, 
-// lscerts fetches that URL's X509 certificates then 
-// writes details of the leaf certificate to standard output, one certificate per line.
-// Input lines that are blank or comment, starting '#', are ignored.
-//
-// Lscerts trusts certificates signed by the set of certificate authorities (CAs) 
-// used by the operating system running it.
-// Errors reading or parsing URLs or fetching certificates are written to standard error.
+// It reads HTTPS URLs from standard input, one URL per line,
+// fetches and validates the list of X509 certificates from each URL
+// then writes details of the leaf certificate to standard output, one certificate per line.
+// Input lines that are blank or comment (starting '#') are ignored.
+// Errors about reading or parsing URLs and fetching or validating certificates are 
+// written to standard error.
+// To be valid, certificates must be signed by a certificate authority (CA)
+// trusted by the operating system running lscerts.
+
 package main
 
 import (
@@ -57,14 +58,15 @@ func getHostPort(str string) (hostPort string, err error) {
 	return hostPort, nil
 }
 
-// FetchCert fetches X509 certificates from URL https://<hostPort> 
-// returning cert == leaf certificate and err == nil.
-// If failed to fetch the certificates, fetchCert returns cert == nil and err != nil.
+// FetchCert fetches and validates X509 certificates from URL https://<hostPort> 
+// returning cert == valid leaf certificate and err == nil.
+// If failed to fetch or validate the certificates, 
+// fetchCert returns cert == nil and err != nil.
 func fetchCert(hostPort string) (cert *x509.Certificate, err error) {
 	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}, 
 					"tcp", hostPort, nil)
 	if err != nil {
-		// failed to connect to hostPort within timeout or certificates not valid
+		// failed to either connect to hostPort within timeout or validate certificates
 		return nil, fmt.Errorf("%s \"%s\": %w", exec, hostPort, err)
 	}
 	defer conn.Close()
@@ -74,7 +76,7 @@ func fetchCert(hostPort string) (cert *x509.Certificate, err error) {
 	return cert, nil
 }
 
-// GetToExpiry returns indication of how long from now to expiry time.
+// GetToExpiry returns how long from now to expiry time.
 func getToExpiry(expiry time.Time) (toExpiry string) {
 	const hoursPerDay = 24
 	const hoursPerWeek = hoursPerDay * 7
@@ -115,6 +117,7 @@ func main() {
 			continue
 		}
 
+		// cert is valid X509 leaf certificate for url fetched from hostPort
 		expiryTime := cert.NotAfter
 		expiryDate := expiryTime.Format(time.DateOnly)
 		toExpiry := getToExpiry(expiryTime)

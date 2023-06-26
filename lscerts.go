@@ -50,7 +50,7 @@ func getHostPort(str string) (hostPort string, err error) {
 		return "", errors.New(fmt.Sprintf("%s \"%s\": url scheme not https", exec, str))
 	}
 
-	hostPort = url.Hostname()
+	hostPort = url.Host
 	if url.Port() == "" {
 		const httpsPort = 443
 		hostPort = fmt.Sprintf("%s:%d", hostPort, httpsPort)

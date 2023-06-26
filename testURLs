@@ -3,10 +3,12 @@
 #
 # happy
 https://test-ev-rsa.ssl.com
-https://test-ev-ecc.ssl.com
+https://test-ev-ecc.ssl.com:443
 https://sha256.badssl.com/
-https://test-dv-rsa.ssl.com
+https://test-dv-rsa.ssl.com/
 https://test-dv-ecc.ssl.com
+https://ecc384.badssl.com
+https://rsa4096.badssl.com
 
 # unhappy
 # 

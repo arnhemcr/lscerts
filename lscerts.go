@@ -12,15 +12,14 @@
 // If not, see <https://www.gnu.org/licenses/>.
 
 // Lscerts lists certificates for URLs.
-// It reads HTTPS URLs from standard input, one URL per line,
+// It reads HTTPS URLs from standard input, one per line,
 // fetches and validates the list of X509 certificates from each URL
-// then writes details of the leaf certificate to standard output, one certificate per line.
-// Input lines that are blank or comment (starting '#') are ignored.
+// then writes details of the leaf certificate to standard output.
 // Errors about reading or parsing URLs and fetching or validating certificates are
 // written to standard error.
-// To be valid, certificates must be signed by a certificate authority (CA)
-// trusted by the operating system running lscerts.
-
+// Input lines that are blank or comment (starting '#') are ignored.
+// Lscerts trusts certificates issued by the same set of certificate authorities (CAs)
+// as the operating system on which it is running.
 package main
 
 import (
@@ -37,6 +36,7 @@ import (
 
 const exec = "lscerts"
 const comment = '#'
+const fetchTimeout = 5 // seconds
 
 // GetHostPort parses str as an HTTPS URL
 // returning hostPort == "<hostName>:<portNumber>" and err == nil.
@@ -63,7 +63,7 @@ func getHostPort(str string) (hostPort string, err error) {
 // If failed to fetch or validate the certificates,
 // fetchCert returns cert == nil and err != nil.
 func fetchCert(hostPort string) (cert *x509.Certificate, err error) {
-	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second},
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: fetchTimeout * time.Second},
 		"tcp", hostPort, nil)
 	if err != nil {
 		// failed to either connect to hostPort within timeout or validate certificates
@@ -104,7 +104,7 @@ func getToExpiry(expiry time.Time) (toExpiry string) {
 }
 
 func main() {
-	fmt.Printf("%c expires toExpiry URL serialNumber issuer\n", comment)
+	fmt.Printf("%c expires toExpiry URL serialNumber issuerCA\n", comment)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {

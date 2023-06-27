@@ -16,7 +16,7 @@
 // fetches and validates the list of X509 certificates from each URL
 // then writes details of the leaf certificate to standard output, one certificate per line.
 // Input lines that are blank or comment (starting '#') are ignored.
-// Errors about reading or parsing URLs and fetching or validating certificates are 
+// Errors about reading or parsing URLs and fetching or validating certificates are
 // written to standard error.
 // To be valid, certificates must be signed by a certificate authority (CA)
 // trusted by the operating system running lscerts.
@@ -38,7 +38,7 @@ import (
 const exec = "lscerts"
 const comment = '#'
 
-// GetHostPort parses str as an HTTPS URL 
+// GetHostPort parses str as an HTTPS URL
 // returning hostPort == "<hostName>:<portNumber>" and err == nil.
 // If failed to parse a URL, getHostPort returns hostPort == "" and err != nil.
 func getHostPort(str string) (hostPort string, err error) {
@@ -58,13 +58,13 @@ func getHostPort(str string) (hostPort string, err error) {
 	return hostPort, nil
 }
 
-// FetchCert fetches and validates X509 certificates from URL https://<hostPort> 
+// FetchCert fetches and validates X509 certificates from URL https://<hostPort>
 // returning cert == valid leaf certificate and err == nil.
-// If failed to fetch or validate the certificates, 
+// If failed to fetch or validate the certificates,
 // fetchCert returns cert == nil and err != nil.
 func fetchCert(hostPort string) (cert *x509.Certificate, err error) {
-	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}, 
-					"tcp", hostPort, nil)
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second},
+		"tcp", hostPort, nil)
 	if err != nil {
 		// failed to either connect to hostPort within timeout or validate certificates
 		return nil, fmt.Errorf("%s \"%s\": %w", exec, hostPort, err)
@@ -76,28 +76,35 @@ func fetchCert(hostPort string) (cert *x509.Certificate, err error) {
 	return cert, nil
 }
 
-// GetToExpiry returns how long from now to expiry time.
+// GetToExpiry returns how long from now to expiry
+// rounded down to an integer number of hours, weeks or years.
 func getToExpiry(expiry time.Time) (toExpiry string) {
 	const hoursPerDay = 24
 	const hoursPerWeek = hoursPerDay * 7
+	const hoursPerYear = hoursPerWeek * 52
 	hours := int64(time.Until(expiry).Hours())
 	switch {
-	case hours <= 0:
+	case hours < 0:
 		toExpiry = "expired"
+	case hours < 1:
+		toExpiry = "<1h"
 	case hours <= hoursPerDay:
 		toExpiry = fmt.Sprintf("%dh", hours)
 	case hours <= hoursPerWeek:
 		days := int(hours / hoursPerDay)
 		toExpiry = fmt.Sprintf("%dd", days)
-	default:
+	case hours <= hoursPerYear:
 		weeks := int(hours / hoursPerWeek)
 		toExpiry = fmt.Sprintf("%dw", weeks)
+	default:
+		years := int(hours / hoursPerYear)
+		toExpiry = fmt.Sprintf("%dy", years)
 	}
 	return toExpiry
 }
 
 func main() {
-	fmt.Printf("%c expires toExpiry serialNumber URL issuer\n", comment)
+	fmt.Printf("%c expires toExpiry URL serialNumber issuer\n", comment)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -121,7 +128,7 @@ func main() {
 		expiryTime := cert.NotAfter
 		expiryDate := expiryTime.Format(time.DateOnly)
 		toExpiry := getToExpiry(expiryTime)
-		fmt.Println(expiryDate, toExpiry, cert.SerialNumber, url, cert.Issuer)
+		fmt.Println(expiryDate, toExpiry, url, cert.SerialNumber, cert.Issuer)
 	}
 	err := scanner.Err()
 	if err != nil {

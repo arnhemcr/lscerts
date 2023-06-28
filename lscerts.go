@@ -27,6 +27,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"flag"
 	"fmt"
 	"net"
 	"net/url"
@@ -104,7 +105,9 @@ func getToExpiry(expiry time.Time) (toExpiry string) {
 }
 
 func main() {
-	var headerWritten bool
+	var noHeader bool
+	flag.BoolVar(&noHeader, "n", false, "no output header")
+	flag.Parse()
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -125,9 +128,9 @@ func main() {
 		}
 
 		// cert is valid X509 leaf certificate for url fetched from hostPort
-		if headerWritten == false {
+		if noHeader == false {
 			fmt.Printf("%cexpires toExpiry URL serialNumber issuerCA\n", comment)
-			headerWritten = true
+			noHeader = true
 		}
 		expiryTime := cert.NotAfter
 		expiryDate := expiryTime.Format(time.DateOnly)

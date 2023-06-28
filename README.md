@@ -16,7 +16,7 @@ For example, to list certificates on a couple of URLs from a Unix-like command l
     https://example.org
     https://wikipedia.org/
     +
-    # expires toExpiry URL serialNumber issuerCA
+    #expires toExpiry URL serialNumber issuerCA
     2024-02-13 33w https://example.com 16...93 CN=DigiCert TLS RSA SHA256 2020 CA1, ...
     2023-07-23 3w https://wikipedia.org/ 26...53 CN=R3, ...
     $

@@ -150,7 +150,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, fmt.Errorf("%s: %w", exec, err))
 	}
 
-	if noHeader == false {
+	if (noHeader == false) && (1 <= len(details)) {
 		fmt.Printf("%cexpires toExpiry URL serialNumber issuerCA\n", 
 			comment)
 	}

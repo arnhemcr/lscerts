@@ -137,12 +137,16 @@ func main() {
 			continue
 		}
 
-		// cert is valid X509 leaf certificate for url fetched from hostPort
+		// cert is valid X509 leaf certificate for url 
+		// fetched from hostPort
+		const ofs = "," // output field separator
 		expiryTime := cert.NotAfter
 		toExpiry := getToExpiry(expiryTime)
-		fields := []string{expiryTime.Format(time.DateOnly), toExpiry, url,
-			cert.SerialNumber.String(), cert.Issuer.String()}
-		record := strings.Join(fields, " ")
+		fields := []string{expiryTime.Format(time.DateOnly), 
+			toExpiry, url,
+			cert.SerialNumber.String(), 
+			cert.Issuer.CommonName}
+		record := strings.Join(fields, ofs)
 		details = append(details, record)
 	}
 	err := scanner.Err()
@@ -151,7 +155,7 @@ func main() {
 	}
 
 	if (noHeader == false) && (1 <= len(details)) {
-		fmt.Printf("%cexpires toExpiry URL serialNumber issuerCA\n",
+		fmt.Printf("%c expires,toExpiry,URL,serialNumber,issuerCN\n",
 			comment)
 	}
 	sort.Strings(details)

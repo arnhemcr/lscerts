@@ -33,5 +33,6 @@ the following details:
  * issuerCN:     common name (CN) of the CA that issued this certificate
 
 Lscerts is free software (see [LICENSE](LICENSE)) written in Go.
-arnhemcr made lscerts [for the flow of it](https://en.wikipedia.org/wiki/Flow_%28psychology%29).
+arnhemcr made lscerts 
+[for the flow of it](https://en.wikipedia.org/wiki/Flow_%28psychology%29).
 

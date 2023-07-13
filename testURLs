@@ -26,5 +26,5 @@ https://nosuchhost.example.com
 https://bad-port.org:77b
 #
 # URL not HTTPS
-http://example.com
 index.html
+http://example.com

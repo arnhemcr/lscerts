@@ -13,16 +13,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Lscerts lists certificates for URLs.
+// Lscerts lists details of certificates on URLs.
 // It reads HTTPS URLs from standard input, one per line.
 // Then it fetches and validates the list of X509 certificates from each URL,
 // and writes details of each leaf certificate
-// sorted by expiry date ascending.
+// sorted by ascending expiry date (from certificate's NotAfter time).
 // Errors about reading or parsing URLs and fetching or
 // validating certificates are written to standard error.
 // Input lines that are blank or comment (starting '#') are ignored.
 // Lscerts trusts certificates issued by the same set of
-// certificate authorities as the operating system on which it runs.
+// certificate authorities (CAs) as the operating system on which it runs.
 
 package main
 
@@ -144,8 +144,8 @@ func main() {
 		toExpiry := getToExpiry(expiryTime)
 		fields := []string{expiryTime.Format(time.DateOnly), 
 			toExpiry, url,
-			cert.SerialNumber.String(), 
-			cert.Issuer.CommonName}
+			cert.Issuer.CommonName,
+			cert.SerialNumber.String()} 
 		record := strings.Join(fields, ofs)
 		details = append(details, record)
 	}
@@ -155,7 +155,7 @@ func main() {
 	}
 
 	if (noHeader == false) && (1 <= len(details)) {
-		fmt.Printf("%c expires,toExpiry,URL,serialNumber,issuerCN\n",
+		fmt.Printf("%c expiry,toExpiry,URL,issuerCN,serialNumber\n",
 			comment)
 	}
 	sort.Strings(details)

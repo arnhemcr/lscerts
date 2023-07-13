@@ -10,7 +10,7 @@ Errors about reading or parsing URLs and fetching or
 validating certificates are written to standard error.
 Input lines that are blank or comment (starting '#') are ignored.
 Lscerts trusts certificates issued by the same set of
-certificate authorities as the operating system on which it runs.
+certificate authorities (CAs) as the operating system on which it runs.
 
 Lscerts is free software (see [LICENSE](LICENSE)), written in Go and hosted at
 [https://github.com/arnhemcr/lscerts](https://github.com/arnhemcr/lscerts).

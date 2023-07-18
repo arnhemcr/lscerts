@@ -22,9 +22,11 @@ https://self-signed.badssl.com
 # no such host
 https://nosuchhost.example.com
 #
+# host (probably) not listening on port
+https://example.com:444/
+#
 # port not valid
 https://bad-port.org:77b
 #
-# URL not HTTPS
-index.html
+# URL scheme not HTTPS
 http://example.com

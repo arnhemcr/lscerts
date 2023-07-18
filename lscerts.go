@@ -13,17 +13,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Lscerts lists details of certificates on URLs.
-// It reads HTTPS URLs from standard input, one per line.
-// Then it fetches and validates the list of X509 certificates from each URL,
-// and writes details of each leaf certificate
-// sorted by ascending expiry date (from certificate's NotAfter time).
-// Errors about reading or parsing URLs and fetching or
-// validating certificates are written to standard error.
-// Input lines that are blank or comment (starting '#') are ignored.
-// Lscerts trusts certificates issued by the same set of
-// certificate authorities (CAs) as the operating system on which it runs.
+/*
+Lscerts checks that certificates on a list of HTTPS URLs are
+accessible and valid then lists those certificates in the order they expire.
 
+Lscerts reads a list of URLs from standard input, one per line.
+Input lines that are blank or comment, starting '#', are ignored.
+For each HTTPS URL, it fetches and validates the list of X.509 certificates
+then writes the following details for each leaf certificate,
+one per line sorted by expiry date ascending:
+
+  - expires:      expiry date of this certificate
+  - toExpiry:     time until this certificate expires:
+    hours, days, weeks or years rounded down to a whole number
+  - URL:          this certificate was fetched from
+  - serialNumber: of this certificate
+  - issuerCN:     common name (CN) of the CA that issued this certificate
+
+Errors about reading or parsing URLs and
+fetching or validating certificates are written to standard error.
+Lscerts trusts certificates issued by the same set of
+certificate authorities (CAs) as the operating system on which it runs.
+
+Usage:
+
+	lscerts [-n]
+
+	-n    do not write header for certificate details
+*/
 package main
 
 import (
@@ -41,9 +58,7 @@ import (
 	"time"
 )
 
-const exec = "lscerts"
 const comment = '#'
-const fetchTimeout = 5 // for certificates in seconds
 
 // GetHostPort parses str as an HTTPS URL
 // returning hostPort == "<hostName>:<portNumber>" and err == nil.
@@ -52,10 +67,10 @@ func getHostPort(str string) (hostPort string, err error) {
 	url, err := url.Parse(str)
 	switch {
 	case err != nil:
-		return "", fmt.Errorf("%s %w", exec, err)
+		return "", fmt.Errorf("%s %w", os.Args[0], err)
 	case url.Scheme != "https":
 		return "", errors.New(fmt.Sprintf(
-			"%s \"%s\": url scheme not https", exec, str))
+			"%s \"%s\": url scheme not https", os.Args[0], str))
 	}
 
 	hostPort = url.Host
@@ -66,18 +81,19 @@ func getHostPort(str string) (hostPort string, err error) {
 	return hostPort, nil
 }
 
-// FetchCert fetches and validates X509 certificates from URL https://<hostPort>
+// FetchCert fetches and validates certificates from URL https://<hostPort>
 // returning cert == valid leaf certificate and err == nil.
 // If failed to fetch or validate the certificates,
 // fetchCert returns cert == nil and err != nil.
 func fetchCert(hostPort string) (cert *x509.Certificate, err error) {
 	conn, err := tls.DialWithDialer(
-		&net.Dialer{Timeout: fetchTimeout * time.Second},
+		&net.Dialer{Timeout: 5 * time.Second},
 		"tcp", hostPort, nil)
 	if err != nil {
 		// failed to connect to hostPort in timeout
 		// or validate certificates
-		return nil, fmt.Errorf("%s \"%s\": %w", exec, hostPort, err)
+		return nil,
+			fmt.Errorf("%s \"%s\": %w", os.Args[0], hostPort, err)
 	}
 	defer conn.Close()
 
@@ -115,7 +131,8 @@ func getToExpiry(expiry time.Time) (toExpiry string) {
 
 func main() {
 	var noHeader bool
-	flag.BoolVar(&noHeader, "n", false, "no output header")
+	flag.BoolVar(&noHeader, "n", false,
+		"do not write header for certificate details")
 	flag.Parse()
 
 	details := []string{}
@@ -137,25 +154,23 @@ func main() {
 			continue
 		}
 
-		// cert is valid X509 leaf certificate for url 
-		// fetched from hostPort
-		const ofs = "," // output field separator
+		// cert is valid leaf certificate for url fetched from hostPort
 		expiryTime := cert.NotAfter
 		toExpiry := getToExpiry(expiryTime)
-		fields := []string{expiryTime.Format(time.DateOnly), 
+		fields := []string{expiryTime.Format(time.DateOnly),
 			toExpiry, url,
-			cert.Issuer.CommonName,
-			cert.SerialNumber.String()} 
-		record := strings.Join(fields, ofs)
+			cert.SerialNumber.String(),
+			cert.Issuer.CommonName}
+		record := strings.Join(fields, ",")
 		details = append(details, record)
 	}
 	err := scanner.Err()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Errorf("%s: %w", exec, err))
+		fmt.Fprintln(os.Stderr, fmt.Errorf("%s: %w", os.Args[0], err))
 	}
 
 	if (noHeader == false) && (1 <= len(details)) {
-		fmt.Printf("%c expiry,toExpiry,URL,issuerCN,serialNumber\n",
+		fmt.Printf("%c expires,toExpiry,URL,serialNumber,issuerCN\n",
 			comment)
 	}
 	sort.Strings(details)

@@ -3,7 +3,7 @@
 Lscerts checks that certificates on a list of HTTPS URLs are
 accessible and valid then lists those certificates in the order they expire.
 It is a command line program written in
-[Go](https://en.wikipedia.org/wiki/Go_(programming_language)
+[Go](https://en.wikipedia.org/wiki/Go_(programming_language))
 and is free software (see [LICENSE](LICENSE)).
 
 ## Get started

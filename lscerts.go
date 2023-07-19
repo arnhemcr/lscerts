@@ -16,11 +16,12 @@
 /*
 Lscerts checks that certificates on a list of HTTPS URLs are
 accessible and valid then lists those certificates in the order they expire.
+For help in using the program, run "lscerts -h".
 
-Lscerts reads a list of URLs from standard input, one per line.
-Input lines that are blank or comment, starting '#', are ignored.
-For each HTTPS URL, it fetches and validates the list of X.509 certificates
-then writes the following details for each leaf certificate,
+Lscerts reads a list of URLs from file or standard input, one URL per line.
+Input lines that are blank or comment, starting "#", are ignored.
+For each HTTPS URL, lscerts fetches and validates the list of
+X.509 certificates then writes the following details for each leaf certificate,
 one per line sorted by expiry date ascending:
 
   - expires:      expiry date of this certificate
@@ -34,12 +35,6 @@ Errors about reading or parsing URLs and
 fetching or validating certificates are written to standard error.
 Lscerts trusts certificates issued by the same set of
 certificate authorities (CAs) as the operating system on which it runs.
-
-Usage:
-
-	lscerts [-n]
-
-	-n    do not write header for certificate details
 */
 package main
 
@@ -58,7 +53,57 @@ import (
 	"time"
 )
 
-const comment = '#'
+const comment = '#' // start of input comment and output header lines
+
+const noHeaderFlag = "n"
+const noHeaderText = "do not write header for certificate details"
+
+var noHeader bool
+var input *os.File // stream to read URLs from
+
+// Init processes the command line setting input and noHeader.
+// If a flag is undefined, help was requested,
+// there are too many arguments or the file argument cannot be read,
+// Init will exit lscerts.
+func init() {
+	const helpFlag = "h"
+	const helpText = "write this help text then exit"
+	var help bool
+	flag.BoolVar(&help, helpFlag, false, helpText)
+	flag.BoolVar(&noHeader, noHeaderFlag, false, noHeaderText)
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "\nUsage: %s [-%s][-%s] [file]\n",
+			os.Args[0], helpFlag, noHeaderFlag)
+		fmt.Fprintln(os.Stderr, `
+Lscerts checks that certificates on a list of HTTPS URLs are 
+accessible and valid then lists those certificates in the order they expire.
+URLs are read from a file or standard input, one URL per line.
+			`)
+		flag.PrintDefaults()
+		fmt.Fprintln(os.Stderr)
+	}
+	flag.Parse()
+
+	if help {
+		flag.Usage()
+		os.Exit(0)
+	}
+	switch flag.NArg() {
+	case 0:
+		input = os.Stdin
+	case 1:
+		var err error
+		input, err = os.Open(flag.Arg(0))
+		if err != nil {
+			fmt.Fprintln(os.Stderr,
+				fmt.Errorf("%s: %w", os.Args[0], err))
+			os.Exit(3)
+		}
+	default:
+		flag.Usage()
+		os.Exit(2)
+	}
+}
 
 // GetHostPort parses str as an HTTPS URL
 // returning hostPort == "<hostName>:<portNumber>" and err == nil.
@@ -130,13 +175,9 @@ func getToExpiry(expiry time.Time) (toExpiry string) {
 }
 
 func main() {
-	var noHeader bool
-	flag.BoolVar(&noHeader, "n", false,
-		"do not write header for certificate details")
-	flag.Parse()
-
+	var err error
 	details := []string{}
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if (line == "") || (line[0] == comment) {
@@ -164,9 +205,10 @@ func main() {
 		record := strings.Join(fields, ",")
 		details = append(details, record)
 	}
-	err := scanner.Err()
+	err = scanner.Err()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Errorf("%s: %w", os.Args[0], err))
+		os.Exit(4)
 	}
 
 	if (noHeader == false) && (1 <= len(details)) {

@@ -3,7 +3,7 @@
 Lscerts checks that certificates on a list of HTTPS URLs are
 accessible and valid then lists those certificates in the order they expire.
 It is a command line program written in
-[Go](https://en.wikipedia.org/wiki/Go_(programming_language))
+[Go](https://en.wikipedia.org/wiki/Go_\(programming_language\))
 and is free software (see [LICENSE](LICENSE)).
 
 ## Get started
@@ -16,9 +16,15 @@ follow these steps and `commands`:
 1. unpack the release into a directory with `tar xzf lscerts-1.0.0.tar.gz`
 2. change into the release directory with `cd lscerts-1.0.0`
 3. compile the program with `go build`
-4. run the program on some test URLs with `./lscerts <testURLs`
-   expecting some errors followed by the list of valid certificates
-5. get lscert's documentation with `go doc`
+4. run the program on some test URLs with `./lscerts testURLs`
+   expecting errors followed by the list of certificates
+
+## Further information
+
+In the lscerts release directory:
+
+* get help in using the program with `./lscerts -h`
+* get the documentation with `go doc`
 
 ## Maker
 

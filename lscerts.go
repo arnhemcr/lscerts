@@ -1,28 +1,28 @@
-// Copyright 2023 Andrew Flint arnhemcr@gmail.com
-//
-// This program is free software: you can redistribute it and/or modify it
-// under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 3 of the License,
-// or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY;  without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+/*
+Copyright 2023 Andrew Flint arnhemcr@gmail.com
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY;  without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+*/
 
 /*
-Lscerts checks that certificates on a list of HTTPS URLs are
-accessible and valid then lists those certificates in the order they expire.
-For help in using the program, run "lscerts -h".
+Lscerts lists certificates in the order they will expire.
 
-Lscerts reads a list of URLs from file or standard input, one URL per line.
-Input lines that are blank or comment, starting "#", are ignored.
-For each HTTPS URL, lscerts fetches and validates the list of
-X.509 certificates then writes the following details for each leaf certificate,
-one per line sorted by expiry date ascending:
+It is a command line program that reads a list of HTTPS URLs
+from file or standard input, one URL per line.
+Lines that are blank or comment, starting "#", are ignored.
+For each URL, lscerts fetches and validates the list of
+X.509 certificates then writes the following details for the leaf certificate:
 
   - expires:      expiry date of this certificate
   - toExpiry:     time until this certificate expires:
@@ -31,10 +31,13 @@ one per line sorted by expiry date ascending:
   - serialNumber: of this certificate
   - issuerCN:     common name (CN) of the CA that issued this certificate
 
-Errors about reading or parsing URLs and
-fetching or validating certificates are written to standard error.
+Certificate details are sorted by expiry date ascending.
+Failures to read or parse URLs and fetch or validate certificates
+are written to standard error.
 Lscerts trusts certificates issued by the same set of
 certificate authorities (CAs) as the operating system on which it runs.
+
+For help in using the program, run "lscerts -h".
 */
 package main
 
@@ -75,9 +78,9 @@ func init() {
 		fmt.Fprintf(os.Stderr, "\nUsage: %s [-%s][-%s] [file]\n",
 			os.Args[0], helpFlag, noHeaderFlag)
 		fmt.Fprintln(os.Stderr, `
-Lscerts checks that certificates on a list of HTTPS URLs are 
-accessible and valid then lists those certificates in the order they expire.
-URLs are read from a file or standard input, one URL per line.
+Lscerts lists certificates in the order they will expire.
+It reads a list of HTTPS URLs from file or standard input, one URL per line.
+For each URL, it writes details of the leaf certificate or an error.
 			`)
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr)
@@ -156,6 +159,8 @@ func getToExpiry(expiry time.Time) (toExpiry string) {
 	hours := int64(time.Until(expiry).Hours())
 	switch {
 	case hours < 0:
+		// cannot get here, 
+		// expired certificates are invalid so listed as errors
 		toExpiry = "expired"
 	case hours < 1:
 		toExpiry = "<1h"

@@ -22,7 +22,7 @@ follow these steps with `commands`:
 2. change into the release directory with `cd lscerts-1.0.0`
 3. compile the program with `go build`
 4. run the program on a list of test URLs with `./lscerts testURLs`
-   expecting various errors followed by a list of valid certificates
+   expecting a variety of errors followed by a list of certificates
    in the order they will expire
 5. (optional) install the program with `go install`
 

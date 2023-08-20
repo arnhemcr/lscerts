@@ -21,8 +21,8 @@ Lscerts lists certificates in the order they will expire.
 It is a command line program that reads a list of HTTPS URLs
 from file or standard input, one URL per line.
 Lines that are blank or comment, starting "#", are ignored.
-For each URL, lscerts fetches and validates the list of
-X.509 certificates then writes the following details for the leaf certificate:
+For each URL, lscerts fetches and validates the list of X.509 certificates then
+writes the following details for the leaf certificate:
 
   - expires:      expiry date of this certificate
   - toExpiry:     time until this certificate expires:
@@ -32,7 +32,7 @@ X.509 certificates then writes the following details for the leaf certificate:
   - issuerCN:     common name (CN) of the CA that issued this certificate
 
 Certificate details are sorted by expiry date ascending.
-Failures to read or parse URLs and fetch or validate certificates
+Error messages for failing to read or parse HTTPS URLs and fetch or validate certificates
 are written to standard error.
 Lscerts trusts certificates issued by the same set of
 certificate authorities (CAs) as the operating system on which it runs.
@@ -56,18 +56,17 @@ import (
 	"time"
 )
 
-const comment = '#' // start of input comment and output header lines
+var input *os.File // stream to read HTTPS URLs from
+const comment = '#' // first char on comment lines in input and certificate details header lines
 
+// if noHeader == true then do not write header for certificate details
 const noHeaderFlag = "n"
 const noHeaderText = "do not write header for certificate details"
-
 var noHeader bool
-var input *os.File // stream to read URLs from
 
-// Init processes the command line setting input and noHeader.
-// If a flag is undefined, help was requested,
-// there are too many arguments or the file argument cannot be read,
-// Init will exit lscerts.
+// Init processes command line flags and arguments setting input and noHeader.
+// If a flag is undefined, help was requested, there are too many arguments or
+// the file argument cannot be read, Init will exit the program.
 func init() {
 	const helpFlag = "h"
 	const helpText = "write this help text then exit"
@@ -98,8 +97,7 @@ For each URL, it writes details of the leaf certificate or an error.
 		var err error
 		input, err = os.Open(flag.Arg(0))
 		if err != nil {
-			fmt.Fprintln(os.Stderr,
-				fmt.Errorf("%s: %w", os.Args[0], err))
+			fmt.Fprintln(os.Stderr, fmt.Errorf("%s: %w", os.Args[0], err))
 			os.Exit(3)
 		}
 	default:
@@ -134,14 +132,12 @@ func getHostPort(str string) (hostPort string, err error) {
 // If failed to fetch or validate the certificates,
 // fetchCert returns cert == nil and err != nil.
 func fetchCert(hostPort string) (cert *x509.Certificate, err error) {
-	conn, err := tls.DialWithDialer(
-		&net.Dialer{Timeout: 5 * time.Second},
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second},
 		"tcp", hostPort, nil)
 	if err != nil {
 		// failed to connect to hostPort in timeout
 		// or validate certificates
-		return nil,
-			fmt.Errorf("%s \"%s\": %w", os.Args[0], hostPort, err)
+		return nil, fmt.Errorf("%s \"%s\": %w", os.Args[0], hostPort, err)
 	}
 	defer conn.Close()
 
@@ -159,7 +155,7 @@ func getToExpiry(expiry time.Time) (toExpiry string) {
 	hours := int64(time.Until(expiry).Hours())
 	switch {
 	case hours < 0:
-		// cannot get here, 
+		// cannot get here,
 		// expired certificates are invalid so listed as errors
 		toExpiry = "expired"
 	case hours < 1:
@@ -203,10 +199,8 @@ func main() {
 		// cert is valid leaf certificate for url fetched from hostPort
 		expiryTime := cert.NotAfter
 		toExpiry := getToExpiry(expiryTime)
-		fields := []string{expiryTime.Format(time.DateOnly),
-			toExpiry, url,
-			cert.SerialNumber.String(),
-			cert.Issuer.CommonName}
+		fields := []string{expiryTime.Format(time.DateOnly), toExpiry, url,
+			cert.SerialNumber.String(), cert.Issuer.CommonName}
 		record := strings.Join(fields, ",")
 		details = append(details, record)
 	}
@@ -217,8 +211,7 @@ func main() {
 	}
 
 	if (noHeader == false) && (1 <= len(details)) {
-		fmt.Printf("%c expires,toExpiry,URL,serialNumber,issuerCN\n",
-			comment)
+		fmt.Printf("%c expires,toExpiry,URL,serialNumber,issuerCN\n", comment)
 	}
 	sort.Strings(details)
 	for _, detail := range details {

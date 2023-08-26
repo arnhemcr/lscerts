@@ -56,17 +56,18 @@ import (
 	"time"
 )
 
-var input *os.File // stream to read HTTPS URLs from
+var input *os.File  // stream to read HTTPS URLs from
 const comment = '#' // first char on comment lines in input and certificate details header lines
 
 // if noHeader == true then do not write header for certificate details
 const noHeaderFlag = "n"
 const noHeaderText = "do not write header for certificate details"
+
 var noHeader bool
 
 // Init processes command line flags and arguments setting input and noHeader.
 // If a flag is undefined, help was requested, there are too many arguments or
-// the file argument cannot be read, Init will exit the program.
+// the file argument cannot be read, init will exit the program.
 func init() {
 	const helpFlag = "h"
 	const helpText = "write this help text then exit"
@@ -116,7 +117,7 @@ func getHostPort(str string) (hostPort string, err error) {
 		return "", fmt.Errorf("%s %w", os.Args[0], err)
 	case url.Scheme != "https":
 		return "", errors.New(fmt.Sprintf(
-			"%s \"%s\": url scheme not https", os.Args[0], str))
+			"%s %q: url scheme not https", os.Args[0], str))
 	}
 
 	hostPort = url.Host
@@ -137,7 +138,7 @@ func fetchCert(hostPort string) (cert *x509.Certificate, err error) {
 	if err != nil {
 		// failed to connect to hostPort in timeout
 		// or validate certificates
-		return nil, fmt.Errorf("%s \"%s\": %w", os.Args[0], hostPort, err)
+		return nil, fmt.Errorf("%s %q: %w", os.Args[0], hostPort, err)
 	}
 	defer conn.Close()
 
@@ -175,6 +176,12 @@ func getToExpiry(expiry time.Time) (toExpiry string) {
 	return toExpiry
 }
 
+// Main reads HTTPS URLs from input, one URL per line ignoring blank or comment lines,
+// writing details of each URL's leaf certificate to standard output,
+// sorted by expiry date ascending.
+// If main fails to read input, it will write the error to standard error then exit the program.
+// Errors from failures to parse HTTPS URLs, fetch or validate certificates are
+// written to standard error before any certificate details.
 func main() {
 	var err error
 	details := []string{}
